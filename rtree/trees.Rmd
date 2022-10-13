@@ -1,0 +1,219 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(rpart)
+library(rpart.plot)
+library(dplyr)
+```
+
+
+
+
+
+```{r}
+green <- read_csv('data/add_green.csv') %>% janitor::clean_names()
+green
+```
+mutate(across(where(is.numeric),
+                ~ as.factor(.x)))
+```{r}
+green %>% names()
+```
+```{r}
+green %>% select(age_65_years) %>% unique()
+```
+
+```{r}
+green = green %>% 
+mutate(distance_to_nearest_green_space = factor(distance_to_nearest_green_space, levels = c(0,1), labels = c('No', 'Yes'))) %>% 
+mutate(community_belonging
+= factor(community_belonging, levels = c(1,2,3,4,5), labels = c('VB',                                                          'B','NO','G','VG'))) %>% 
+mutate(neighbourhood_rating  
+ = factor(neighbourhood_rating, levels = c(1,2,3,4,5), labels = c('VB',                                                               'B','NO','G','VG'))) %>%
+mutate(satisfaction_with_nearest_green_space  
+ = factor(satisfaction_with_nearest_green_space, levels = c(1,3,4,5), labels = c('VB',                                                           'NO','G','VG'))) %>% 
+mutate(economic_status= factor(economic_status, levels = c(0,1), labels = c('N', 'S'))) %>% 
+mutate(household_size= factor(household_size, levels = c(1,2,3,4,5,6,7,8,9,10), labels = c('1','2','3','4','5','6','7','8','9','10'))) %>% 
+mutate(nearest_green_space_use= factor(nearest_green_space_use, levels = c(0,1,2,3,4,5,6,7), labels = c('0','1','2','3','4','5','6','7'))) %>% 
+mutate(age_35_64_years= factor(age_35_64_years, levels = c(0,1), labels = c('no','yes'))) %>% 
+mutate(age_65_years= factor(age_65_years, levels = c(0,1), labels = c('no','yes'))) %>% 
+mutate(gender_male= factor(gender_male, levels = c(0,1), labels = c('no','yes')))  
+green
+```
+
+```{r}
+#set.seed(19)
+```
+
+```{r}
+n_data <- nrow(green)
+
+test_index <- sample(1:n_data, size = n_data*0.2)
+
+test  <- slice(green, test_index)
+
+
+train <- slice(green, -test_index)
+```
+
+
+```{r}
+test %>%
+ janitor::tabyl(distance_to_nearest_green_space)
+```
+
+```{r}
+train %>%
+ janitor::tabyl(distance_to_nearest_green_space)
+```
+
+
+```{r}
+fit <- rpart(
+  formula = distance_to_nearest_green_space ~ ., 
+  data = train, 
+  method = 'anova'
+)
+
+rpart.plot(fit, 
+           yesno=2,
+           fallen.leaves = TRUE, 
+           faclen = 6,
+           digits = 4)
+```
+```{r}
+rpart.plot(fit, 
+           yesno = 2, 
+           fallen.leaves = TRUE, 
+           faclen = 6, 
+           digits = 4, 
+           type = 4)
+```
+```{r}
+nb <- read_csv('data/add_neighbourhood.csv') %>% janitor::clean_names()
+```
+```{r}
+nb
+```
+
+
+
+
+```{r}
+nb <- nb %>% 
+mutate(distance_to_nearest_green_space = factor(distance_to_nearest_green_space, levels = c(1,2,3,4,5), labels = c('1','2','3','4','5'))) %>% 
+mutate(community_belonging
+= factor(community_belonging, levels = c(1,2,3,4,5), labels = c('VB',                                                          'B','NO','G','VG'))) %>% 
+mutate(neighbourhood_rating  
+ = factor(neighbourhood_rating, levels = c(0,1), labels = c('bad','good'))) %>%
+mutate(satisfaction_with_nearest_green_space  
+ = factor(satisfaction_with_nearest_green_space, levels = c(1,3,4,5), labels = c('VB',                                                           'NO','G','VG'))) %>% 
+mutate(economic_status= factor(economic_status, levels = c(0,1), labels = c('N', 'S'))) %>% 
+mutate(household_size= factor(household_size, 
+                              levels =c(1,2,3,4,5,6,7,8,9,10), 
+                         labels=c('1','2','3','4','5','6','7','8','9','10'))) %>% 
+mutate(nearest_green_space_use= factor(nearest_green_space_use, levels = c(0,1,2,3,4,5,6,7), labels = c('0','1','2','3','4','5','6','7'))) %>% 
+mutate(age_35_64_years= factor(age_35_64_years, levels = c(0,1), labels = c('no','yes'))) %>% 
+mutate(age_65_years= factor(age_65_years, levels = c(0,1), labels = c('no','yes'))) %>% 
+mutate(gender_male= factor(gender_male, levels = c(0,1), labels = c('no','yes'))) %>% 
+mutate(highest_education_level= factor(highest_education_level))
+nb
+```
+```{r}
+
+```
+
+```{r}
+n_data <- nrow(nb)
+
+test_index <- sample(1:n_data, size = n_data*0.2)
+
+test_nb  <- slice(nb, test_index)
+
+
+train_nb <- slice(nb, -test_index)
+```
+
+
+```{r}
+test_nb %>%
+ janitor::tabyl(neighbourhood_rating)
+
+train_nb %>%
+ janitor::tabyl(neighbourhood_rating)
+```
+
+```{r}
+fit <- rpart(
+  formula = neighbourhood_rating ~ ., 
+  data = train_nb, 
+  method = 'class'
+)
+
+rpart.plot(fit,
+           yesno = 0,
+           fallen.leaves = TRUE, 
+          )
+```
+
+```{r}
+nbc <- read_csv('data/add_neighbourhood_c.csv') %>% janitor::clean_names()
+nbc
+```
+```{r}
+nbc<- nbc %>% mutate(neighbourhood_rating  
+ = factor(neighbourhood_rating)) %>% 
+mutate(distance_to_nearest_green_space = factor(distance_to_nearest_green_space, levels = c(1,2,3,4,5), labels = c('1','2','3','4','5'))) %>% 
+mutate(community_belonging
+= factor(community_belonging, levels = c(1,2,3,4,5), labels = c('VB',                                                          'B','NO','G','VG'))) %>% 
+mutate(satisfaction_with_nearest_green_space  
+ = factor(satisfaction_with_nearest_green_space, levels = c(1,3,4,5), labels = c('VB',                                                           'NO','G','VG'))) %>% 
+mutate(economic_status= factor(economic_status, levels = c(0,1), labels = c('N', 'S'))) %>% 
+mutate(household_size= factor(household_size, 
+                              levels =c(1,2,3,4,5,6,7,8,9,10), 
+                         labels=c('1','2','3','4','5','6','7','8','9','10'))) %>% 
+mutate(nearest_green_space_use= factor(nearest_green_space_use, levels = c(0,1,2,3,4,5,6,7), labels = c('0','1','2','3','4','5','6','7'))) %>% 
+mutate(age_35_64_years= factor(age_35_64_years, levels = c(0,1), labels = c('no','yes'))) %>% 
+mutate(age_65_years= factor(age_65_years, levels = c(0,1), labels = c('no','yes'))) %>% 
+mutate(gender_male= factor(gender_male, levels = c(0,1), labels = c('no','yes'))) %>% 
+mutate(highest_education_level= factor(highest_education_level))
+nbc
+```
+
+```{r}
+n_data <- nrow(nbc)
+
+test_index <- sample(1:n_data, size = n_data*0.2)
+
+test_nbc  <- slice(nbc, test_index)
+
+
+train_nbc <- slice(nbc, -test_index)
+```
+
+```{r}
+test_nbc %>%
+ janitor::tabyl(neighbourhood_rating)
+
+train_nbc %>%
+ janitor::tabyl(neighbourhood_rating)
+```
+
+```{r}
+fit <- rpart(
+  formula = neighbourhood_rating ~ ., 
+  data = train_nbc, 
+  method = 'anova'
+)
+
+rpart.plot(fit,
+           yesno = 0,
+           fallen.leaves = TRUE, 
+          )
+```
+
